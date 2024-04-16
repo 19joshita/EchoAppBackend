@@ -1,42 +1,64 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("./../models/userModel");
-const { createUserSchema } = require("../validation/userValidation");
-
-const registerController = async (req, res) => {
-    const { error, value } = createUserSchema.validate(req.body, {
-        abortEarly: false, // Set abortEarly to false to collect all errors
-    });
+const { registerSchema, loginSchema } = require("../validation/userValidation");
+const { generateTokens } = require("../utils/tokengenerator");
+require("dotenv").config();
+// Registration
+exports.register = async (req, res) => {
+    const { error, value } = registerSchema.validate(req.body);
     if (error) {
-        const errors = error.details?.map((detail) => detail.message);
-        console.log(errors, "errors");
-        return res.status(400).json({ errors });
+        return res.status(400).json({ error: error.details[0].message });
     }
-    try {
-        const { name, email, password, role } = value;
-        const existingUser = await User.findOne({ email: email });
-        if (existingUser) {
-            return res.status(200).json({
-                success: false,
-                message: "A user with this email already exists.",
-            });
-        }
-        const user = new User({
-            name,
-            email,
-            password,
-            role,
-        });
-        await user.save();
-        res.status(201).send({
-            success: true,
-            message: "Register Succcessfully please Login",
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).send({
-            success: false,
-            message: "Error in Register api",
-            error,
-        });
+    const { name, email, password } = value;
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res
+            .status(400)
+            .json({ error: "Email already exists", status: false });
     }
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Create a new user
+    const user = new User({
+        name,
+        email,
+        password: hashedPassword,
+    });
+    // Save the user to the database
+    await user.save();
+    res
+        .status(201)
+        .json({ message: "User registered successfully", status: true });
 };
-module.exports = registerController;
+
+// Login
+exports.login = async (req, res) => {
+    const { error, value } = loginSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const { email, password } = value;
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+        return res.status(400).json({ error: "Invalid email" });
+    }
+
+    // Check the password
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+        return res.status(400).json({ error: "Invalid password" });
+    }
+
+    // Create a JWT token only
+    // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    //     expiresIn: "1h",
+    // });   res.json({ token });
+    // ****Create refresh token and access token ****//
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    res.json({ accessToken, refreshToken });
+};
