@@ -4,7 +4,7 @@ const registerSchema = Joi.object({
     name: Joi.string().required("name is required."),
     email: Joi.string().email().required("email is required."),
     password: Joi.string().min(6).required("password is required."),
-    confirmPassword: Joi.string()
+    confirmpassword: Joi.string()
         .valid(Joi.ref("password"))
         .required()
         .messages({ "any.only": "Passwords must match" }),

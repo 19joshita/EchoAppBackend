@@ -37,7 +37,9 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { error, value } = loginSchema.validate(req.body);
     if (error) {
-        return res.status(400).json({ error: error.details[0].message });
+        return res
+            .status(400)
+            .json({ message: error.details[0].message, status: false });
     }
 
     const { email, password } = value;
@@ -45,20 +47,21 @@ exports.login = async (req, res) => {
     // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
-        return res.status(400).json({ error: "Invalid email" });
+        return res.status(400).json({ error: "Invalid email", status: false });
     }
 
     // Check the password
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
-        return res.status(400).json({ error: "Invalid password" });
+        return res.status(400).json({ error: "Invalid password", status: false });
     }
-
+    const message = "User Login Successfully";
+    const status = true;
     // Create a JWT token only
     // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
     //     expiresIn: "1h",
     // });   res.json({ token });
     // ****Create refresh token and access token ****//
     const { accessToken, refreshToken } = generateTokens(user._id);
-    res.json({ accessToken, refreshToken });
+    res.json({ accessToken, refreshToken, user, message, status });
 };
