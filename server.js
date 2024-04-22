@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const connectDB = require("./config/db");
 const path = require("path");
 const authRoutes = require("./routes/authRoute");
+const postRoute = require("./routes/postRoutes");
 //DOTENV
 dotenv.config();
 //MONGODB CONNENCTION
@@ -19,20 +20,21 @@ app.use(bodyParser.json());
 app.use(morgan("dev"));
 //MADDLEWARE
 app.use(
-    cors({
-        origin: "*",
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        // allowedHeaders: ["Content-Type", "Authorization"],
-        // exposedHeaders: ["Authorization"],
-        // credentials: true,
-    })
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    // allowedHeaders: ["Content-Type", "Authorization"],
+    // exposedHeaders: ["Authorization"],
+    // credentials: true,
+  })
 );
 // app.use(express.json());
 //ROUTE
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1", postRoute);
 //PORT
 const PORT = process.env.PORT || 8080;
 //LISTEN
 app.listen(PORT, () => {
-    console.log(`Server is Running ${PORT}`.bgBlue.white);
+  console.log(`Server is Running ${PORT}`.bgBlue.white);
 });

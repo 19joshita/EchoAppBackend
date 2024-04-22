@@ -16,4 +16,15 @@ const loginSchema = Joi.object({
     password: Joi.string().required(),
 });
 
-module.exports = { registerSchema, loginSchema };
+// Update user schema
+const updateUserSchema = Joi.object({
+    name: Joi.string().optional(),
+    email: Joi.string().email().optional(),
+    password: Joi.string().min(6).optional(),
+    confirmpassword: Joi.string()
+        .valid(Joi.ref("password"))
+        .optional()
+        .messages({ "any.only": "Passwords must match" }),
+});
+
+module.exports = { registerSchema, loginSchema, updateUserSchema };
